@@ -56,7 +56,41 @@ mpx_liwc <- mpx %>%
   # Min-max normalize feature values
   group_by(liwc_names) %>%
   mutate(liwc_values = scale_this(liwc_values)) %>%
-  ungroup()
+  ungroup() %>%
+  # Add LIWC categories
+  mutate(
+    liwc_categories = if_else(liwc_names %in% c("Analytic", "Clout", "Authentic", 
+                                                "Tone", "WPS", "Sixltr", "Dic"), 
+                              "Summary", "None"),
+    liwc_categories = if_else(liwc_names %in% c("funct", "pronoun", "ppron", "i", "we", "you",
+                                                "shehe", "they", "ipron", "article", "prep",
+                                                "auxverb", "adverb", "conj", "negate"), 
+                              "Linguistic", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c("verb", "adj", "compare", "interrog", "numbers",
+                                                "quant"), 
+                              "Grammar", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Affect", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Social", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Cognitive", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Perceptual", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Biological", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Drives", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Time Orientation", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Relativity", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c(""), 
+                              "Personal Concerns", liwc_categories),
+    liwc_categories = if_else(liwc_names %in% c("swear", "netspeak", "assent", "nonflu", "filler"), 
+                              "Informal Language", liwc_categories)
+  )
+mpx_liwc
 
 # CONVERSATION VOLUME OVER TIME -------------------------------------------
 
@@ -97,7 +131,9 @@ ggsave(filename = "plots/mpx_volume_over_time.png", plot = mpx_volume_plot,
 
 # LIWC FEATURES OVER TIME -------------------------------------------------
 
-
+mpx_liwc %>%
+  ggplot(aes(x = time_created, y = liwc_values, group = liwc_names, color = liwc_names)) +
+  geom_line()
 
 # SENTIMENT OVERTIME ------------------------------------------------------
 
