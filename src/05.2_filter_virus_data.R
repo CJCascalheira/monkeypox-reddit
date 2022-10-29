@@ -22,5 +22,5 @@ virus %>%
   arrange(desc(perc))
 
 # Export to file
-write_csv(virus, "data/all_subreddits_virus_data.csv")
-write_csv(liwc, "data/all_subreddits_virus_data_liwc_features.csv")
+write_csv(virus, "data/combined_subreddits/all_subreddits_virus_data.csv")
+write_csv(liwc, "data/combined_subreddits/all_subreddits_virus_data_liwc_features.csv")
