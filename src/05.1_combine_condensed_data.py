@@ -1,11 +1,34 @@
 """
-@author: Kelsey Corro
+@author: Kelsey Corro, Cory J. Cascalheira
 Created: 2022-10-18
+Updated: 2022-10-29
 
 This script imports .csv files that were created from "04_condense_data.py"
 that contain monkeypox data and combines them into one file.
 It does the same with the .csv files that contain virus data and also shows
 some simple analysis that was done on all files.
+
+Here's some info I found for the data:
+r_lgbt contained 743 rows of data that had a term relating to monkeypox.
+r_gaymers contained 5 rows of data that had a term relating to monkeypox.
+r_ainbow contained 9 rows of data that had a term relating to monkeypox.
+r_askgaybros contained 8077 rows of data that had a term relating to monkeypox.
+r_asktransgender contained 26 rows of data that had a term relating to monkeypox.
+r_MtF contained 44 rows of data that had a term relating to monkeypox.
+r_NonBinary contained 5 rows of data that had a term relating to monkeypox.
+
+There were a total of 8909 comments from the top 9 lgbt subreddits that contained a term relating to monkeypox.
+
+r_lgbt contained 335 rows of data that had a term relating to virus.
+r_gaymers contained 36 rows of data that had a term relating to virus.
+r_ainbow contained 11 rows of data that had a term relating to virus.
+r_askgaybros contained 4729 rows of data that had a term relating to virus.
+r_asktransgender contained 209 rows of data that had a term relating to virus.
+r_MtF contained 246 rows of data that had a term relating to virus.
+r_NonBinary contained 24 rows of data that had a term relating to virus.
+
+There were a total of 5590 comments from the top 9 lgbt subreddits that contained a term relating to virus.
+
 """
 
 # import pandas library to use dataframes
@@ -91,3 +114,16 @@ print( "There were a total of", len(virus_data),
 # Create a .csv file that contains all the data
 mpx_data.to_csv('all_subreddits_mpx_data.csv', index=False)
 virus_data.to_csv('all_subreddits_virus_data.csv', index = False)
+
+#region MANUAL CALCULATIONS
+
+# Get total comments from 03_initial_analysis file
+total_comments = 588141 + 41774 + 14180 + 680019 + 287576 + 389032 + 132601 + 286635 + 106679
+
+# Get MPX-specific comments from current file
+mpx_comments = 8909
+
+# Percent related to MPX
+mpx_comments / total_comments
+
+#endregion

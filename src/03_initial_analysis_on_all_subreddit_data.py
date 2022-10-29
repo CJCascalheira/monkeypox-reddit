@@ -23,9 +23,10 @@ Basic description of data collected:
     Each .csv file is titled with the subreddit the comments were obtained 
     from. These comments were extracted on the basis that they were submitted
     after May 01, 2022 @ 12:00 am UTC. The reason why this time frame is
-    relavant is because that is when outbreaks of monkeypox started to get 
+    relevant is because that is when outbreaks of monkeypox started to get
     reported.
 '''
+
 # import pandas library to use dataframes
 import pandas as pd
 
@@ -59,6 +60,7 @@ subreddit_str = [ "r_lgbt", "r_gaymers", "r_ainbow", "r_askgaybros",
                   "r_BisexualTeens" ]
 
 print()
+
 # Find out the number of rows from each subreddit
 for x in range(len( subreddits )):
     print( subreddit_str[ x ], "contains", len( subreddits[ x ]),
