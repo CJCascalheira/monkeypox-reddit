@@ -2,7 +2,9 @@
 # Raw data downloads
 # -----------------------------------------------------
 
-data/**
+data/combined_subreddits/**
+data/original_virus/**
+data/utility/**
 
 # -----------------------------------------------------
 # R files
