@@ -5,7 +5,6 @@
 data/combined_subreddits/**
 data/original_virus/**
 data/utility/**
-mallet-2.0.8/**
 
 # -----------------------------------------------------
 # R files

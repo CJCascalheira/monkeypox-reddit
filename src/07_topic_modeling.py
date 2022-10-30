@@ -144,6 +144,60 @@ def lemmatization(word_list, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV', 'PRO
     # Returns a list of lemmas
     return texts_out
 
+
+def get_optimal_lda(dictionary, corpus, limit=30, start=2, step=2):
+    """
+    Execute multiple LDA topic models and computer the perplexity and coherence scores to choose the LDA model with
+    the optimal number of topics.
+
+    Parameters
+    ----------
+    dictionary: Gensim dictionary
+    corpus: Gensim corpus
+    limit: an integer
+        max num of topics
+    start: an integer
+        number of topics with which to start
+    step: an integer
+        number of topics by which to increase during each model training iteration
+
+    Returns:
+    -------
+    model_list: a list of LDA topic models
+    coherence_values: a list
+        coherence values corresponding to the LDA model with respective number of topics
+    perplexity_values: a list
+        perplexity values corresponding to the LDA model with respective number of topics
+    """
+    # Initialize empty lists
+    model_list = []
+    coherence_values = []
+    perplexity_values = []
+
+    # For each number of topics
+    for num_topics in range(start, limit, step):
+
+        # Train an LDA model with Gensim
+        model = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=dictionary, num_topics=num_topics, random_state=100,
+                                                update_every=1, chunksize=2000, passes=10, alpha='auto',
+                                                per_word_topics=True)
+
+        # Add the trained LDA model to the list
+        model_list.append(model)
+
+        # Compute UMass coherence score and add to list  - lower is better
+        # https://radimrehurek.com/gensim/models/coherencemodel.html
+        # https://www.os3.nl/_media/2017-2018/courses/rp2/p76_report.pdf
+        cm = CoherenceModel(model=model, corpus=corpus, coherence='u_mass')
+        coherence = cm.get_coherence()
+        coherence_values.append(coherence)
+
+        # Compute Perplexity and add to list - lower is better
+        perplex = model.log_perplexity(corpus)
+        perplexity_values.append(perplex)
+
+    return model_list, coherence_values, perplexity_values
+
 #endregion
 
 #region PREPROCESS THE TEXT
@@ -205,26 +259,33 @@ corpus = [id2word.doc2bow(text) for text in texts]
 
 #region EXECUTE THE TOPIC MODELS WITH LDA
 
-# Build LDA model, num_topics = 10
-lda_10 = gensim.models.ldamodel.LdaModel(corpus=corpus, id2word=id2word, num_topics=10, random_state=100,
-                                         update_every=1, chunksize=2000, passes=10, alpha='auto', per_word_topics=True)
+# Get the LDA topic model with the optimal number of topics
+model_list, coherence_values, perplexity_values = get_optimal_lda(dictionary=id2word, corpus=corpus,
+                                                                  limit=20, start=2, step=2)
 
-# Compute Perplexity - lower is better
-print('\nPerplexity: ', lda_10.log_perplexity(corpus))
+# Plot the coherence scores
+# Set the x-axis valyes
+limit = 30
+start = 2
+step = 2
+x = range(start, limit, step)
 
-# Compute Coherence Score - higher is better
-# https://radimrehurek.com/gensim/models/coherencemodel.html
-cm = CoherenceModel(model=lda_10, corpus=corpus, coherence='u_mass')
-coherence = cm.get_coherence()
-print('\nCoherence Score: ', coherence)
+# Create the plot
+plt.figure(figsize=(6, 4), dpi=200)
+plt.plot(x, coherence_values)
+plt.xlabel("Number of Topics")
+plt.ylabel("UMass Coherence Score")
+plt.xticks(np.arange(min(x), max(x)+1, 2.0))
+plt.axvline(x=8, color='red')
+plt.savefig('plots/lda_coherence_plot.png')
+plt.show()
 
-#endregion
-
-#region VISUALIZE BEST TOPIC MODEL AND INTERPRET
+# From the plot, the best LDA model is when num_topics == 8
+optimal_lda_model = model_list[3]
 
 # Visualize best LDA topic model
 # https://stackoverflow.com/questions/41936775/export-pyldavis-graphs-as-standalone-webpage
-vis = pyLDAvis.gensim_models.prepare(lda10, corpus, id2word)
+vis = pyLDAvis.gensim_models.prepare(optimal_lda_model, corpus, id2word)
 pyLDAvis.save_html(vis, 'plots/lda.html')
 
 #endregion
