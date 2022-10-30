@@ -138,22 +138,7 @@ mpx_sentiment <- mpx_tokens %>%
   mutate(value = if_else(is.na(value), 0, value)) %>%
   # Select the main variables
   select(temp_id, time_created, sentiment = value) %>%
-  mutate(sentiment = if_else(sentiment < 0, "negative", if_else(sentiment == 0, "netural", "positive")))
-
-
-  # Group by post
-  group_by(temp_id) %>%
-  # Calculate total sentiment of post
-  summarize(sentiment = sum(value)) %>%
-  ungroup() %>%
-  # Merge with main data set
-  left_join(mpx) 
-
-# Max positive sentiment
-mpx_sentiment %>% arrange(desc(sentiment)) %>% head()
-
-# Max negative sentiment
-mpx_sentiment %>% arrange(sentiment) %>% head()
+  mutate(sentiment = if_else(sentiment < 0, "negative", if_else(sentiment == 0, "neutral", "positive")))
 
 # CONVERSATION VOLUME OVER TIME -------------------------------------------
 
@@ -247,6 +232,11 @@ mpx_sentiment_over_time <- mpx_sentiment %>%
   # Transform data into weeks
   mutate(time_week = week(time_created)) %>%
   count(time_week, sentiment) %>%
+  # Organize the legend by most common sentiment
+  mutate(sentiment = factor(sentiment, levels = c("neutral", "negative", "positive"))) %>%
+  # Change names of variables
+  mutate(sentiment = recode(sentiment, "neutral" = "Neutral", "negative" = "Negative", 
+                             "positive" = "Positive")) %>%
   # Specify variables and create line plot
   ggplot(aes(x = time_week, y = n, group = sentiment, color = sentiment)) +
   geom_line(size = 1.5) +
@@ -255,7 +245,7 @@ mpx_sentiment_over_time <- mpx_sentiment %>%
   scale_x_continuous(breaks = c(21, 25, 29, 33, 37, 41), 
                      labels = c("21" = "May", "25" = "June", "29" = "July", "33" = "August", 
                                 "37" = "September", "41" = "October")) +
-  scale_color_discrete(type = c("darkblue", "cadetblue3", "dodgerblue")) +
+  scale_color_discrete(type = c("cadetblue3", "darkblue", "dodgerblue")) +
   labs(x = "Months in 2022", y = "Number of Words", 
        color = "Sentiment") +
   theme_bw() +
