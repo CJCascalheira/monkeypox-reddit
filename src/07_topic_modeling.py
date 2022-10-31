@@ -57,6 +57,9 @@ new_stop_words = [re.sub("\'", "", sent) for sent in stop_words]
 stop_words.extend(new_stop_words)
 stop_words.extend(['ish', 'lol', 'non', 'im', 'like', 'ive', 'cant', 'amp', 'ok', 'gt'])
 
+# Load GSDMM - topic modeling for short texts (i.e., social media)
+from gsdmm import MovieGroupProcess
+
 # Import data
 mpx = pd.read_csv('data/combined_subreddits/all_subreddits_mpx_data.csv')
 
@@ -257,11 +260,11 @@ corpus = [id2word.doc2bow(text) for text in texts]
 
 #endregion
 
-#region EXECUTE THE TOPIC MODELS WITH LDA
+#region EXECUTE THE TOPIC MODELS WITH VANILLA LDA
 
 # Get the LDA topic model with the optimal number of topics
 model_list, coherence_values, perplexity_values = get_optimal_lda(dictionary=id2word, corpus=corpus,
-                                                                  limit=20, start=2, step=2)
+                                                                  limit=30, start=2, step=2)
 
 # Plot the coherence scores
 # Set the x-axis valyes
@@ -276,12 +279,12 @@ plt.plot(x, coherence_values)
 plt.xlabel("Number of Topics")
 plt.ylabel("UMass Coherence Score")
 plt.xticks(np.arange(min(x), max(x)+1, 2.0))
-plt.axvline(x=8, color='red')
+plt.axvline(x=10, color='red')
 plt.savefig('plots/lda_coherence_plot.png')
 plt.show()
 
-# From the plot, the best LDA model is when num_topics == 8
-optimal_lda_model = model_list[3]
+# From the plot, the best LDA model is when num_topics == 10
+optimal_lda_model = model_list[4]
 
 # Visualize best LDA topic model
 # https://stackoverflow.com/questions/41936775/export-pyldavis-graphs-as-standalone-webpage
@@ -323,7 +326,7 @@ for i in range(len(mpx_text_original)):
     dominance_strength.append(how_dominant)
 
 # Prepare to merge with original dataframe
-new_mpx_df = mpx.loc[:, ['author', 'body']]
+new_mpx_df = mpx.loc[:, ['author', 'body', 'permalink']]
 
 # Add the dominant topics and strengths
 new_mpx_df['dominant_topic'] = dominant_topics
@@ -337,5 +340,24 @@ topics_to_quote = new_mpx_df.groupby('dominant_topic').head(10)
 
 # Save the data frame for easy reading
 topics_to_quote.to_csv("data/results/topics_to_quote.csv")
+
+#endregion
+
+#region EXECUTE THE TOPIC MODELS WITH GSDMM
+
+# Get the number of words per post
+words_per_post = []
+
+for i in range(len(mpx_words_cleaned)):
+    words_per_post.append(len(mpx_words_cleaned[i]))
+
+# Histogram of words per post
+plt.hist(x=words_per_post)
+plt.show()
+
+# Descriptive statistic of words per post
+print(np.mean(words_per_post))
+print(np.std(words_per_post))
+print(len([num for num in words_per_post if num <= 50]) / len(words_per_post))
 
 #endregion
