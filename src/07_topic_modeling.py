@@ -24,6 +24,7 @@ Resources for working with spaCy
 # Load core libraries
 import numpy as np
 import pandas as pd
+from pprint import pprint
 
 # Import tool for regular expressions
 import re
@@ -42,7 +43,6 @@ import spacy
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
 # Load plotting tools
-import pyLDAvis
 import pyLDAvis.gensim_models
 import matplotlib.pyplot as plt
 
@@ -148,7 +148,7 @@ def lemmatization(word_list, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV', 'PRO
 def get_optimal_lda(dictionary, corpus, limit=30, start=2, step=2):
     """
     Execute multiple LDA topic models and computer the perplexity and coherence scores to choose the LDA model with
-    the optimal number of topics.
+    the optimal number of topics. Relies on Gensim.
 
     Parameters
     ----------
@@ -161,7 +161,7 @@ def get_optimal_lda(dictionary, corpus, limit=30, start=2, step=2):
     step: an integer
         number of topics by which to increase during each model training iteration
 
-    Returns:
+    Returns
     -------
     model_list: a list of LDA topic models
     coherence_values: a list
@@ -203,10 +203,10 @@ def get_optimal_lda(dictionary, corpus, limit=30, start=2, step=2):
 #region PREPROCESS THE TEXT
 
 # Convert text to list
-mpx_text = mpx['body'].values.tolist()
+mpx_text_original = mpx['body'].values.tolist()
 
 # Remove emails, new line characters, and single quotes
-mpx_text = [re.sub('\\S*@\\S*\\s?', '', sent) for sent in mpx_text]
+mpx_text = [re.sub('\\S*@\\S*\\s?', '', sent) for sent in mpx_text_original]
 mpx_text = [re.sub('\\s+', ' ', sent) for sent in mpx_text]
 mpx_text = [re.sub("\'", "", sent) for sent in mpx_text]
 
@@ -287,5 +287,55 @@ optimal_lda_model = model_list[3]
 # https://stackoverflow.com/questions/41936775/export-pyldavis-graphs-as-standalone-webpage
 vis = pyLDAvis.gensim_models.prepare(optimal_lda_model, corpus, id2word)
 pyLDAvis.save_html(vis, 'plots/lda.html')
+
+# Get the Reddit post that best represents each topic
+# https://radimrehurek.com/gensim/models/ldamodel.html
+
+# Initialize empty lists
+lda_output = []
+topic_distributions = []
+
+# For each post, get the LDA estimation output
+for i in range(len(mpx_text_original)):
+    lda_output.append(optimal_lda_model[corpus[i]])
+
+# For each output, select just the topic distribution
+for i in range(len(mpx_text_original)):
+    topic_distributions.append(lda_output[i][0])
+
+# Initialize empty lists
+dominant_topics = []
+dominance_strength = []
+
+# For each post, extract the dominant topic from the topic distribution
+for i in range(len(mpx_text_original)):
+
+    # Sort the tuple by the topic probability (2nd tuple item), largest to smallest
+    # https://www.geeksforgeeks.org/python-program-to-sort-a-list-of-tuples-by-second-item/
+    topic_distributions[i].sort(key = lambda x: x[1], reverse=True)
+
+    # Extract the dominant topic
+    dominant_topic = topic_distributions[i][0][0]
+    dominant_topics.append(dominant_topic)
+
+    # Extract the probability of the dominant topic
+    how_dominant = topic_distributions[i][0][1]
+    dominance_strength.append(how_dominant)
+
+# Prepare to merge with original dataframe
+new_mpx_df = mpx.loc[:, ['author', 'body']]
+
+# Add the dominant topics and strengths
+new_mpx_df['dominant_topic'] = dominant_topics
+new_mpx_df['topic_probability'] = dominance_strength
+
+# Sort the data frame
+new_mpx_df = new_mpx_df.sort_values(by=['dominant_topic', 'topic_probability'], ascending=[True, False])
+
+# Select the 10 most illustrative posts per topic
+topics_to_quote = new_mpx_df.groupby('dominant_topic').head(10)
+
+# Save the data frame for easy reading
+topics_to_quote.to_csv("data/results/topics_to_quote.csv")
 
 #endregion
