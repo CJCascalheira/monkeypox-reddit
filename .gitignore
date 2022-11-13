@@ -6,6 +6,7 @@ data/combined_subreddits/**
 data/original_data/**
 data/utility/**
 data/results/**
+plots/bertopic/**
 
 # -----------------------------------------------------
 # R files
