@@ -24,7 +24,6 @@ Resources for working with spaCy
 # Load core libraries
 import numpy as np
 import pandas as pd
-from pprint import pprint
 
 # Import tool for regular expressions
 import re
