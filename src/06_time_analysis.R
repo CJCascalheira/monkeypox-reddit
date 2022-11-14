@@ -68,7 +68,7 @@ scale_this <- function(x){
 # PREPROCESS DATA ---------------------------------------------------------
 
 # General preprocessing of the LIWC data for MPX data set
-mpx_liwc <- mpx %>%
+mpx_liwc <- mpx %>%==_+++
   # Make long format
   pivot_longer(cols = WC:OtherP, names_to = "liwc_names", values_to = "liwc_values") %>%
   # Min-max normalize feature values

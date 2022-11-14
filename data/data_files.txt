@@ -1,3 +1,27 @@
 Data files are available upon request.
 
 Raw data and cleaned Reddit data are not shared publicly on Github due to size of the files.
+
+This directory on the authors' local machines contain the following sub-directories:
+
+- combined_subreddits
+    - all_subreddits_mpx_data.csv
+    - all_subreddits_mpx_data_liwc_features.csv
+    - all_subreddits_virus_data.csv
+    - all_subreddits_virus_data_liwc_features.csv
+- original_data
+    - all_subreddits_mpx_data.csv
+    - all_subreddits_mpx_data_liwc_features.csv
+    - all_subreddits_virus_data.csv
+    - all_subreddits_virus_data_liwc_features.csv
+- results
+    - bertopic
+    - bertopic.csv
+    - bertopic_examples.txt
+    - bertopic_top_words.txt
+    - gdsmm_result_words_per_topic.txt
+    - gdsmm_results_for_beta_changes.txt
+    - gsdmm_topics_to_quote.csv
+    - lda_topics_to_quote.csv
+- utility
+    - slangSD.txt
