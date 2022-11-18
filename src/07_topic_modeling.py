@@ -24,6 +24,7 @@ Resources for working with spaCy
 # Load core libraries
 import numpy as np
 import pandas as pd
+import time
 
 # Import tool for regular expressions
 import re
@@ -285,8 +286,13 @@ corpus = [id2word.doc2bow(text) for text in texts]
 #region EXECUTE THE TOPIC MODELS WITH VANILLA LDA
 
 # Get the LDA topic model with the optimal number of topics
+start_time = time.time()
 model_list, coherence_values, perplexity_values = get_optimal_lda(dictionary=id2word, corpus=corpus,
                                                                   limit=30, start=2, step=2)
+end_time = time.time()
+processing_time = end_time - start_time
+print(processing_time / 60)
+print((processing_time / 60) / 15)
 
 # Plot the coherence scores
 # Set the x-axis valyes
@@ -437,10 +443,14 @@ post_count_04 = np.array(mgp_04.cluster_doc_count)
 print('Beta = 0.4. The number of posts per topic: ', post_count_04)
 
 # Train the GSDMM model, beta = 0.3
+start_time = time.time()
 mgp_03 = MovieGroupProcess(K=30, alpha=0.1, beta=0.3, n_iters=40)
 gsdmm_b03 = mgp_03.fit(docs=mpx_words_cleaned, vocab_size=n_terms)
 post_count_03 = np.array(mgp_03.cluster_doc_count)
 print('Beta = 0.3. The number of posts per topic: ', post_count_03)
+end_time = time.time()
+processing_time = end_time - start_time
+print(processing_time / 60)
 
 # Train the GSDMM model, beta = 0.2
 mgp_02 = MovieGroupProcess(K=30, alpha=0.1, beta=0.2, n_iters=40)

@@ -63,7 +63,7 @@ end_time = time.time()
 bt_processing_time = end_time - start_time
 
 # Print the processing time
-print('The processing time is: %f' % bt_processing_time)
+print('The processing time is: %f' % (bt_processing_time / 60))
 
 # Save the BERTopic model
 # topic_model.save("data/results/bertopic")
