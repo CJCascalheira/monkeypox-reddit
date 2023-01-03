@@ -3,6 +3,7 @@
 # -----------------------------------------------------
 
 data/combined_subreddits/**
+data/combined_tweets/**
 data/original_data/**
 data/utility/**
 data/results/**
