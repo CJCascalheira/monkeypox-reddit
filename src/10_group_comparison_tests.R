@@ -11,6 +11,7 @@
 # Load dependencies
 library(tidyverse)
 library(lsr)
+library(janitor)
 
 # Import data - MPX data set for Twitter
 tweets <- read_csv("data/combined_tweets/tweets_liwc.csv")
@@ -194,6 +195,21 @@ test_signf_results <- data.frame(liwc_names, t_stat, deg_free, effect_sizes, p_v
   mutate(bonf_value = bonf_value) %>%
   mutate(signf_at_bonf = p_val < bonf_value) %>%
   # Keep only significant differences
-  filter(signf_at_bonf == TRUE) %>%
-  arrange(desc(effect_sizes))
+  filter(signf_at_bonf == TRUE)
 test_signf_results
+
+# Add LIWC categories
+test_signf_results1 <- social_media_liwc %>%
+  select(liwc_categories, liwc_names) %>%
+  distinct(liwc_names, .keep_all = TRUE) %>%
+  right_join(test_signf_results) %>% 
+  # Round values
+  mutate(
+    t_stat = round(t_stat, 3),
+    effect_sizes = round(effect_sizes, 3)
+  ) %>%
+  arrange(liwc_categories, desc(effect_sizes))
+test_signf_results1
+
+# Save data to csv
+write_csv(test_signf_results1, "data/results/significance_tests.csv")
