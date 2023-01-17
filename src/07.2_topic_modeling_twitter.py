@@ -1,9 +1,8 @@
 """
 @author: Cory J Cascalheira
-Created: 2022-10-30
+Created: 2023-01-17
 
-The purpose of this script is to generate topic models of the monkeypox conversation among LGBTQ+ people using Reddit
-text.
+The purpose of this script is to generate topic models of the monkeypox conversation among the general population.
 
 The core code is heavily inspired by the following resources:
 - https://www.machinelearningplus.com/nlp/topic-modeling-gensim-python/
@@ -62,7 +61,7 @@ stop_words.extend(['ish', 'lol', 'non', 'im', 'like', 'ive', 'cant', 'amp', 'ok'
 from gsdmm import MovieGroupProcess
 
 # Import data
-mpx = pd.read_csv('data/combined_subreddits/all_subreddits_mpx_data.csv')
+mpx = pd.read_csv('data/combined_tweets/tweets.csv')
 
 #endregion
 
@@ -229,7 +228,7 @@ def top_words(cluster_word_distribution, top_cluster, values):
 #region PREPROCESS THE TEXT
 
 # Convert text to list
-mpx_text_original = mpx['body'].values.tolist()
+mpx_text_original = mpx['text'].values.tolist()
 
 # Remove emails, new line characters, and single quotes
 mpx_text = [re.sub('\\S*@\\S*\\s?', '', sent) for sent in mpx_text_original]
@@ -307,19 +306,19 @@ plt.plot(x, coherence_values)
 plt.xlabel("Number of Topics")
 plt.ylabel("UMass Coherence Score")
 plt.xticks(np.arange(min(x), max(x)+1, 2.0))
-plt.axvline(x=10, color='red')
-plt.savefig('plots/lda_coherence_plot.png')
+plt.axvline(x=12, color='red')
+plt.savefig('plots/tweets_lda_coherence_plot.png')
 plt.show()
 
-# From the plot, the best LDA model is when num_topics == 10
-optimal_lda_model = model_list[4]
+# From the plot, the best LDA model is when num_topics == 12
+optimal_lda_model = model_list[5]
 
 # Visualize best LDA topic model
 # https://stackoverflow.com/questions/41936775/export-pyldavis-graphs-as-standalone-webpage
 vis = pyLDAvis.gensim_models.prepare(optimal_lda_model, corpus, id2word)
-pyLDAvis.save_html(vis, 'plots/lda.html')
+pyLDAvis.save_html(vis, 'plots/tweets_lda.html')
 
-# Get the Reddit post that best represents each topic
+# Get the tweet that best represents each topic
 # https://radimrehurek.com/gensim/models/ldamodel.html
 
 # Initialize empty lists
@@ -354,7 +353,7 @@ for i in range(len(mpx_text_original)):
     dominance_strength.append(how_dominant)
 
 # Prepare to merge with original dataframe
-new_mpx_df = mpx.loc[:, ['author', 'body', 'permalink']]
+new_mpx_df = mpx.loc[:, ['text']]
 
 # Add the dominant topics and strengths
 new_mpx_df['dominant_topic'] = dominant_topics
@@ -363,11 +362,11 @@ new_mpx_df['topic_probability'] = dominance_strength
 # Sort the data frame
 new_mpx_df = new_mpx_df.sort_values(by=['dominant_topic', 'topic_probability'], ascending=[True, False])
 
-# Select the 10 most illustrative posts per topic
-topics_to_quote = new_mpx_df.groupby('dominant_topic').head(10)
-
-# Save the data frame for easy reading
-topics_to_quote.to_csv("data/results/lda_topics_to_quote.csv")
+# Percent of posts for each topic
+posts_per_topic = new_mpx_df.groupby(['dominant_topic'])['dominant_topic'].count()
+posts_per_topic = pd.DataFrame(posts_per_topic)
+posts_per_topic['percent_posts'] = posts_per_topic['dominant_topic'] / len(new_mpx_df.index)
+print(posts_per_topic.sort_values(['percent_posts'], ascending=False))
 
 #endregion
 
@@ -378,10 +377,6 @@ words_per_post = []
 
 for i in range(len(mpx_words_cleaned)):
     words_per_post.append(len(mpx_words_cleaned[i]))
-
-# Histogram of words per post
-plt.hist(x=words_per_post)
-plt.show()
 
 # Descriptive statistic of words per post
 print(np.mean(words_per_post))
@@ -435,6 +430,9 @@ mgp_05 = MovieGroupProcess(K=30, alpha=0.1, beta=0.5, n_iters=40)
 gsdmm_b05 = mgp_05.fit(docs=mpx_words_cleaned, vocab_size=n_terms)
 post_count_05 = np.array(mgp_05.cluster_doc_count)
 print('Beta = 0.5. The number of posts per topic: ', post_count_05)
+end_time = time.time()
+processing_time = end_time - start_time
+print(processing_time / 60)
 
 # Train the GSDMM model, beta = 0.4
 mgp_04 = MovieGroupProcess(K=30, alpha=0.1, beta=0.4, n_iters=40)
@@ -448,9 +446,6 @@ mgp_03 = MovieGroupProcess(K=30, alpha=0.1, beta=0.3, n_iters=40)
 gsdmm_b03 = mgp_03.fit(docs=mpx_words_cleaned, vocab_size=n_terms)
 post_count_03 = np.array(mgp_03.cluster_doc_count)
 print('Beta = 0.3. The number of posts per topic: ', post_count_03)
-end_time = time.time()
-processing_time = end_time - start_time
-print(processing_time / 60)
 
 # Train the GSDMM model, beta = 0.2
 mgp_02 = MovieGroupProcess(K=30, alpha=0.1, beta=0.2, n_iters=40)
@@ -492,10 +487,10 @@ beta_10 = np.sort(np.append(np.repeat(0, [len(beta_01)-len(beta_10)]), beta_10))
 n_posts = np.append(beta_01, [beta_02, beta_03, beta_04, beta_05, beta_06, beta_07, beta_08, beta_09, beta_10])
 
 # Create list of topic numbers
-topic_numbers = [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] * 10
+topic_numbers = [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] * 10
 
 # Create a list of beta values
-beta_list = [[0.1] * 17] + [[0.2] * 17] + [[0.3] * 17] + [[0.4] * 17] + [[0.5] * 17] + [[0.6] * 17] + [[0.7] * 17] + [[0.8] * 17] + [[0.9] * 17] + [[1.0] * 17]
+beta_list = [[0.1] * 24] + [[0.2] * 24] + [[0.3] * 24] + [[0.4] * 24] + [[0.5] * 24] + [[0.6] * 24] + [[0.7] * 24] + [[0.8] * 24] + [[0.9] * 24] + [[1.0] * 24]
 beta_values = [item for sublist in beta_list for item in sublist]
 
 # Double check that the betas are same length as topic numbers
@@ -510,25 +505,25 @@ sns.set_theme(style="white")
 gsdmm_plot = sns.FacetGrid(gsdmm_df, col='beta', col_wrap=2)
 gsdmm_plot.map(sns.barplot, 'topic_numbers', 'n_posts', color='cornflowerblue')
 gsdmm_plot.set_axis_labels("Topic Numbers", "Number of Posts")
-gsdmm_plot.savefig('plots/gsdmm_topics.png')
+gsdmm_plot.savefig('plots/twitter_gsdmm_topics.png')
 
 # Optimal number of topics?
-print('The optimal number of topics in GSDMM, based on average, is: ', (6 + 4 + 3 + 4 + 2 + 2 + 1 + 2 + 2 + 1) / 10)
+print('The optimal number of topics in GSDMM, based on average, is: ', (19 + 11 + 12 + 6 + 8 + 5 + 4 + 5 + 3 + 3) / 10)
 
-# Since optimal number of plots is GSDMM is 2.7, round to 3---use model where beta = 0.3
+# Since optimal number of plots is GSDMM is 7.6, round to 8---use model where beta = 0.5
 
 # Rearrange the topics in order of importance
-top_index = post_count_03.argsort()[-17:][::-1]
+top_index = post_count_05.argsort()[-24:][::-1]
 
-# Get the top 15 words per topic
-top_words(mgp_03.cluster_word_distribution, top_cluster=top_index, values=15)
+# Get the top 10 words per topic
+top_words(mgp_05.cluster_word_distribution, top_cluster=top_index, values=10)
 
 # Initialize empty list
 gsdmm_topics = []
 
-# Predict the topic for each set of words in a Reddit post
+# Predict the topic for each set of words in a tweet
 for i in range(len(mpx_words_cleaned)):
-    gsdmm_topics.append(mgp_03.choose_best_label(mpx_words_cleaned[i]))
+    gsdmm_topics.append(mgp_05.choose_best_label(mpx_words_cleaned[i]))
 
 # Initialize empty lists
 topic_classes = []
@@ -546,11 +541,16 @@ for i in range(len(mpx_text_original)):
     topic_probs.append(topic_prob)
 
 # Prepare to merge with original dataframe
-gsdmm_mpx_df = mpx.loc[:, ['author', 'body', 'permalink']]
+gsdmm_mpx_df = mpx.loc[:, ['text']]
 
 # Add the dominant topics and strengths
 gsdmm_mpx_df['topic'] = topic_classes
 gsdmm_mpx_df['topic_probability'] = topic_probs
+
+# Count percentages of posts
+gsdmm_topic_counts = pd.DataFrame(gsdmm_mpx_df.groupby(['topic'])['topic'].count())
+gsdmm_topic_counts['percentage'] = gsdmm_topic_counts['topic'] / len(gsdmm_mpx_df.index)
+print(gsdmm_topic_counts.sort_values(['percentage'], ascending=False))
 
 # Sort the data frame
 gsdmm_mpx_df = gsdmm_mpx_df.sort_values(by=['topic', 'topic_probability'], ascending=[False, False])
@@ -559,11 +559,11 @@ gsdmm_mpx_df = gsdmm_mpx_df.sort_values(by=['topic', 'topic_probability'], ascen
 topics_to_quote = gsdmm_mpx_df.groupby('topic').head(10)
 
 # Save the data frame for easy reading
-topics_to_quote.to_csv("data/results/gsdmm_topics_to_quote.csv")
+topics_to_quote.to_csv("data/results/tweets_gsdmm_topics_to_quote.csv")
 
 # Percentage of posts with each top 3 topic
-print(post_count_03[29] / len(mpx_words_cleaned))
-print(post_count_03[13] / len(mpx_words_cleaned))
-print(post_count_03[5] / len(mpx_words_cleaned))
+print(post_count_05[29] / len(mpx_words_cleaned))
+print(post_count_05[13] / len(mpx_words_cleaned))
+print(post_count_05[5] / len(mpx_words_cleaned))
 
 #endregion

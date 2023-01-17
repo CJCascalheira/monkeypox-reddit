@@ -363,8 +363,14 @@ new_mpx_df['topic_probability'] = dominance_strength
 # Sort the data frame
 new_mpx_df = new_mpx_df.sort_values(by=['dominant_topic', 'topic_probability'], ascending=[True, False])
 
+# Percent of posts for each topic
+posts_per_topic = new_mpx_df.groupby(['dominant_topic'])['dominant_topic'].count()
+posts_per_topic = pd.DataFrame(posts_per_topic)
+posts_per_topic['percent_posts'] = posts_per_topic['dominant_topic'] / len(new_mpx_df.index)
+print(posts_per_topic)
+
 # Select the 10 most illustrative posts per topic
-topics_to_quote = new_mpx_df.groupby('dominant_topic').head(10)
+topics_to_quote = new_mpx_df.groupby(['dominant_topic']).head(10)
 
 # Save the data frame for easy reading
 topics_to_quote.to_csv("data/results/lda_topics_to_quote.csv")
