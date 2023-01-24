@@ -1,6 +1,6 @@
 """
 @author: Cory J Cascalheira
-Created: 2023-01-07
+Created: 2023-01-23
 
 The purpose of this script is to generate topic models of the monkeypox conversation on Twitter (general pop), but using
 BERTopic modeling, a method based on the BERT large language model.
@@ -40,10 +40,10 @@ from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 
 # Import data
-mpx = pd.read_csv('data/combined_subreddits/all_subreddits_mpx_data.csv')
+mpx = pd.read_csv('data/combined_tweets/tweets.csv')
 
 # Convert text to list - no need to pre-process since we are using BERT
-mpx_docs = mpx['body'].values.tolist()
+mpx_docs = mpx['text'].values.tolist()
 
 #endregion
 
@@ -66,17 +66,20 @@ bt_processing_time = end_time - start_time
 print('The processing time is: %f' % (bt_processing_time / 60))
 
 # Save the BERTopic model
-# topic_model.save("data/results/bertopic")
+# topic_model.save("data/results/tweets_bertopic")
+
+# Load the BERTopic model
+# topic_model = BERTopic.load("data/results/tweets_bertopic")
 
 # Take a peak at the topic information
 topic_model.get_topic_info()
 
 # Visualize intertopic distance map and export to HTML
 vis = topic_model.visualize_topics()
-vis.write_html("plots/bertopic/bertopic.html")
+vis.write_html("plots/bertopic/tweets_bertopic.html")
 
 # Reduce topics
-topic_model.reduce_topics(mpx_docs, nr_topics=15)
+topic_model.reduce_topics(mpx_docs, nr_topics=4)
 topic_model.get_topic_info()
 
 # Remove stop words and create n grams for topic representation
@@ -85,34 +88,16 @@ topic_model.update_topics(mpx_docs, vectorizer_model=vectorizer_model)
 topic_model.get_topic_info()
 
 # Rename the topics
-topic_model.set_topic_labels({-1: "Noise", 0: "MPX Vax Info Sharing", 1: "Intersection Between Gay Men and MPX", 2: "MPX as STD",
-                              3: "Gay Men Spread MPX", 4: "Injection Site Symptoms", 5: "MPX Spreads via Skin Contact",
-                              6: "Homophobia Concerns", 7: "Expressing Gratitude", 8: "MPX Cases and Testing",
-                              9: "MPX Vax Availability", 10: "Vax 2nd Dose", 11: "Visiting the Doctor",
-                              12: "COVID-19 References", 13: "Comparing Straight and Gay People",
-                              14: "Blame & Fear Mongering"})
+topic_model.set_topic_labels({-1: "Noise", 0: "MPX Cases", 1: "MPX GT", 2: "MPX SA",
+                              3: "MPX and COVID-19"})
 
 # Save the topic results
 topic_df = topic_model.get_topic_info()
 topic_df['Percent'] = topic_df['Count'] / len(mpx_docs)
-topic_df.to_csv("data/results/bertopic.csv")
+topic_df.to_csv("data/results/tweets_bertopic.csv")
 
 # Get information for reporting
 pprint.pprint(topic_model.representative_docs_)
 pprint.pprint(topic_model.topic_representations_)
-
-#endregion
-
-#region DYNAMIC TOPIC MODELING
-
-# Prepare the time component
-timestamps = mpx['converted_createdutc'].values.tolist()
-
-# Create topics over time
-topics_over_time = topic_model.topics_over_time(mpx_docs, timestamps, nr_bins=20)
-
-# Visualize topics
-vis_time = topic_model.visualize_topics_over_time(topics_over_time, custom_labels=True, height=500)
-vis_time.write_html("plots/bertopic/bertopic_time.html")
 
 #endregion

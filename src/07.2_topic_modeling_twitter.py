@@ -430,6 +430,7 @@ mgp_05 = MovieGroupProcess(K=30, alpha=0.1, beta=0.5, n_iters=40)
 gsdmm_b05 = mgp_05.fit(docs=mpx_words_cleaned, vocab_size=n_terms)
 post_count_05 = np.array(mgp_05.cluster_doc_count)
 print('Beta = 0.5. The number of posts per topic: ', post_count_05)
+start_time = time.time()
 end_time = time.time()
 processing_time = end_time - start_time
 print(processing_time / 60)
@@ -487,10 +488,10 @@ beta_10 = np.sort(np.append(np.repeat(0, [len(beta_01)-len(beta_10)]), beta_10))
 n_posts = np.append(beta_01, [beta_02, beta_03, beta_04, beta_05, beta_06, beta_07, beta_08, beta_09, beta_10])
 
 # Create list of topic numbers
-topic_numbers = [24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] * 10
+topic_numbers = [23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] * 10
 
 # Create a list of beta values
-beta_list = [[0.1] * 24] + [[0.2] * 24] + [[0.3] * 24] + [[0.4] * 24] + [[0.5] * 24] + [[0.6] * 24] + [[0.7] * 24] + [[0.8] * 24] + [[0.9] * 24] + [[1.0] * 24]
+beta_list = [[0.1] * 23] + [[0.2] * 23] + [[0.3] * 23] + [[0.4] * 23] + [[0.5] * 23] + [[0.6] * 23] + [[0.7] * 23] + [[0.8] * 23] + [[0.9] * 23] + [[1.0] * 23]
 beta_values = [item for sublist in beta_list for item in sublist]
 
 # Double check that the betas are same length as topic numbers
@@ -508,12 +509,12 @@ gsdmm_plot.set_axis_labels("Topic Numbers", "Number of Posts")
 gsdmm_plot.savefig('plots/twitter_gsdmm_topics.png')
 
 # Optimal number of topics?
-print('The optimal number of topics in GSDMM, based on average, is: ', (19 + 11 + 12 + 6 + 8 + 5 + 4 + 5 + 3 + 3) / 10)
+print('The optimal number of topics in GSDMM, based on average, is: ', (17 + 14 + 9 + 6 + 7 + 4 + 3 + 4 + 4 + 3) / 10)
 
-# Since optimal number of plots is GSDMM is 7.6, round to 8---use model where beta = 0.5
+# Since optimal number of plots is GSDMM is 7.1, round to 7---use model where beta = 0.5
 
 # Rearrange the topics in order of importance
-top_index = post_count_05.argsort()[-24:][::-1]
+top_index = post_count_05.argsort()[-23:][::-1]
 
 # Get the top 10 words per topic
 top_words(mgp_05.cluster_word_distribution, top_cluster=top_index, values=10)
@@ -554,16 +555,5 @@ print(gsdmm_topic_counts.sort_values(['percentage'], ascending=False))
 
 # Sort the data frame
 gsdmm_mpx_df = gsdmm_mpx_df.sort_values(by=['topic', 'topic_probability'], ascending=[False, False])
-
-# Select the 10 most illustrative posts per topic
-topics_to_quote = gsdmm_mpx_df.groupby('topic').head(10)
-
-# Save the data frame for easy reading
-topics_to_quote.to_csv("data/results/tweets_gsdmm_topics_to_quote.csv")
-
-# Percentage of posts with each top 3 topic
-print(post_count_05[29] / len(mpx_words_cleaned))
-print(post_count_05[13] / len(mpx_words_cleaned))
-print(post_count_05[5] / len(mpx_words_cleaned))
 
 #endregion

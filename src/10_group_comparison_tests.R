@@ -12,6 +12,8 @@
 library(tidyverse)
 library(lsr)
 library(janitor)
+library(tidytext)
+library(stopwords)
 
 # Import data - MPX data set for Twitter
 tweets <- read_csv("data/combined_tweets/tweets_liwc.csv")
@@ -27,6 +29,21 @@ reddit <- read_csv("data/combined_subreddits/all_subreddits_mpx_data_liwc_featur
   mutate(temp_id = 1:nrow(.)) %>%
   select(temp_id, subreddit, time_created, everything())
 nrow(reddit)
+
+# Get sentiments
+afinn <- get_sentiments("afinn")
+
+# Get slangSD: https://github.com/airtonbjunior/opinionMining/blob/master/dictionaries/slangSD.txt
+slangsd <- read_delim("data/utility/slangSD.txt", delim = "\t", col_names = FALSE) %>%
+  rename(word = X1, value = X2)
+
+# Combine sentiment libraries
+sentiment_df <- bind_rows(afinn, slangsd) %>%
+  distinct(word, .keep_all = TRUE)
+
+# Get all the stop words
+all_stopwords <- c(stopwords(source = "snowball"), stopwords(source = "stopwords-iso"), 
+                   stopwords(source = "smart"), stopwords(source = "marimo"), stopwords(source = "nltk"))
 
 # PREPROCESS DATA ---------------------------------------------------------
 
@@ -79,6 +96,11 @@ liwc_tweets <- tweets %>%
   mutate(text = recode(text, "&amp;" = "and", "Â´" = "'", "â€™" = "'")) %>%
   # Lowercase format
   mutate(text = str_to_lower(text))
+
+# Get text for descriptive statistics
+descriptives_tweets <- liwc_tweets %>%
+  select(temp_id, text, liwc_names, liwc_values) %>%
+  filter(liwc_names == "WC")
 
 # Add grouping variable
 liwc_tweets <- liwc_tweets %>%
@@ -142,6 +164,11 @@ liwc_reddit <- reddit %>%
   mutate(text = str_to_lower(text))
 liwc_reddit
 
+# Get text for descriptive statistics
+descriptives_reddit <- liwc_reddit %>%
+  select(temp_id, text, liwc_names, liwc_values) %>%
+  filter(liwc_names == "WC")
+
 # Add grouping variable
 liwc_reddit <- liwc_reddit %>%
   mutate(group = "reddit") %>%
@@ -154,6 +181,76 @@ social_media_liwc <- bind_rows(liwc_tweets, liwc_reddit) %>%
   filter(!liwc_names %in% c("WC", "Exclam", "AllPunc", "Colon", "Apostro", "Comma", 
                             "Period", "SemiC", "Dash", "Parenth", "OtherP", "Quote"))
 print(social_media_liwc)
+
+# Number of features used
+social_media_liwc %>%
+  distinct(liwc_names)
+
+# DESCRIPTIVE STATISTICS --------------------------------------------------
+
+# BEFORE PREPROCESSING - RAW DATA -----------------------------------------
+
+# Word characters
+descriptives_tweets %>%
+  summarize(
+    mean = mean(liwc_values),
+    sd = sd(liwc_values),
+    median = median(liwc_values),
+    min = min(liwc_values),
+    max = max(liwc_values)
+  )
+
+descriptives_reddit %>%
+  summarize(
+    mean = mean(liwc_values),
+    sd = sd(liwc_values),
+    median = median(liwc_values),
+    min = min(liwc_values),
+    max = max(liwc_values)
+  )
+  
+# AFTER PREPROCESSING - CLEANED DATA -------------------------------------
+
+# Remove stop words from Twitter data
+cleaned_tweets <- descriptives_tweets %>%
+  # Unnest words
+  unnest_tokens(output = "word", input = "text") %>%
+  # Remove stopwords
+  filter(!(word %in% all_stopwords)) %>%
+  # Remove non American standard code (i.e., unicode characters)
+  mutate(word = iconv(word, "latin1", "ASCII", sub = "")) %>%
+  filter(word != "")
+
+# Remove stop words from Reddit data
+cleaned_reddit <- descriptives_reddit %>%
+  # Unnest words
+  unnest_tokens(output = "word", input = "text") %>%
+  # Remove stopwords
+  filter(!(word %in% all_stopwords)) %>%
+  # Remove non American standard code (i.e., unicode characters)
+  mutate(word = iconv(word, "latin1", "ASCII", sub = "")) %>%
+  filter(word != "")
+
+# Word characters
+cleaned_tweets %>%
+  count(temp_id) %>%
+  summarize(
+    mean = mean(n),
+    sd = sd(n),
+    median = median(n),
+    min = min(n),
+    max = max(n)
+  )
+
+cleaned_reddit %>%
+  count(temp_id) %>%
+  summarize(
+    mean = mean(n),
+    sd = sd(n),
+    median = median(n),
+    min = min(n),
+    max = max(n)
+  )
 
 # MULTIPLE T-TESTS --------------------------------------------------------
 

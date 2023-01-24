@@ -1,6 +1,6 @@
 """
 @author: Cory J Cascalheira
-Created: 2022-11-13
+Created: 2022-11-21
 
 The purpose of this script is to generate topic models of the monkeypox conversation among LGBTQ+ people, but using
 BERTopic modeling, a method based on the BERT large language model.
@@ -67,6 +67,9 @@ print('The processing time is: %f' % (bt_processing_time / 60))
 
 # Save the BERTopic model
 # topic_model.save("data/results/bertopic")
+
+# Load the BERTopic model
+# topic_model = BERTopic.load("data/results/bertopic")
 
 # Take a peak at the topic information
 topic_model.get_topic_info()
